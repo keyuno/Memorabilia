@@ -10,7 +10,7 @@ Counterparty tokens are Bitcoin secured.
 
 Transaction Hash: [65864a5f762e7aee567628511d0b67c5591063d7902458bb97855c18762fd233](https://xchain.io/tx/1550384)
 
-# Usage:
+# Usage
 To run the project locally follow the instructions in the link below.
 
 https://threejs.org/docs/#manual/en/introduction/How-to-run-things-locally
