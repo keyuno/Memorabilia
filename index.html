@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Digital Memorabilia Experiment</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+
+		<div id="container"></div>
+		<div id="info">
+
+
+    	  NFT:<span id= "asset"></span>
+
+          <br> <br>
+
+          DESCRIPTION:<span id="description"></span>
+          <br>  <br>
+		  PRICE:
+
+		<script type="module">
+
+
+
+			import * as THREE from './build/three.module.js';
+
+			let camera, scene, renderer;
+			let  sphere, material;
+			var mouse = new THREE.Vector2();
+			
+
+			let count = 0, cubeCamera1, cubeCamera2, cubeRenderTarget1, cubeRenderTarget2;
+
+			let onPointerDownPointerX, onPointerDownPointerY, onPointerDownLon, onPointerDownLat;
+
+			let lon = 0, lat = 0;
+			let phi = 0, theta = 0;
+
+			const textureLoader = new THREE.TextureLoader();
+
+			textureLoader.load( 'birchwood.jpg', function ( texture ) {
+
+				texture.encoding = THREE.sRGBEncoding;
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+
+				init( texture );
+				animate();
+
+			} );
+
+			function init( texture ) {
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				document.body.appendChild( renderer.domElement );
+
+				scene = new THREE.Scene();
+				scene.background = texture;
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 500 );
+
+				//
+
+				cubeRenderTarget1 = new THREE.WebGLCubeRenderTarget( 100, {
+					format: THREE.RGBFormat,
+					generateMipmaps: true,
+					minFilter: THREE.LinearMipmapLinearFilter,
+					encoding: THREE.sRGBEncoding // temporary -- to prevent the material's shader from recompiling every frame
+				} );
+
+				cubeCamera1 = new THREE.CubeCamera( 500, 100, cubeRenderTarget1 );
+
+				cubeRenderTarget2 = new THREE.WebGLCubeRenderTarget( 100, {
+					format: THREE.RGBFormat,
+					generateMipmaps: true,
+					minFilter: THREE.LinearMipmapLinearFilter,
+					encoding: THREE.sRGBEncoding
+				} );
+
+				cubeCamera2 = new THREE.CubeCamera( 100, 100, cubeRenderTarget2 );
+
+				//
+
+				material = new THREE.MeshBasicMaterial( {
+					envMap: cubeRenderTarget2.texture,
+					combine: THREE.MultiplyOperation,
+					reflectivity: 1
+				} );
+
+				 
+
+
+				sphere = new THREE.Mesh( new THREE.SphereGeometry( 10, 20, 20), material );
+				scene.add( sphere );
+			
+
+				//
+
+				document.addEventListener( 'pointerdown', onPointerDown );
+				document.addEventListener( 'wheel', onDocumentMouseWheel );
+
+				window.addEventListener( 'resize', onWindowResized );
+				window.addEventListener( 'click', onClick, false );
+
+			}
+
+			function onWindowResized() {
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+			}
+
+			function onPointerDown( event ) {
+
+				event.preventDefault();
+
+				onPointerDownPointerX = event.clientX;
+				onPointerDownPointerY = event.clientY;
+
+				onPointerDownLon = lon;
+				onPointerDownLat = lat;
+
+				document.addEventListener( 'pointermove', onPointerMove );
+				document.addEventListener( 'pointerup', onPointerUp );
+
+			}
+
+			function onPointerMove( event ) {
+
+				lon = ( event.clientX - onPointerDownPointerX ) * 0.1 + onPointerDownLon;
+				lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+
+			}
+
+			function onPointerUp() {
+
+				document.removeEventListener( 'pointermove', onPointerMove );
+				document.removeEventListener( 'pointerup', onPointerUp );
+
+			}
+
+			function onDocumentMouseWheel( event ) {
+
+				const fov = camera.fov + event.deltaY * 0.05;
+
+				camera.fov = THREE.MathUtils.clamp( fov, 10, 75 );
+
+				camera.updateProjectionMatrix();
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				render();
+
+			}
+
+			function render() {
+
+				const time = Date.now();
+
+				lon += .1;
+
+				lat = Math.max( - 100, Math.min( 500, lat ) );
+				phi = THREE.MathUtils.degToRad( 450 - lat );
+				theta = THREE.MathUtils.degToRad( lon );
+
+			
+
+				sphere.position.x = Math.cos( time * 0.0013 ) * 50;
+				sphere.position.y = Math.sin( time * 0.001 ) * 10;
+				sphere.position.z = Math.sin( time * 0.001 ) * 50;
+
+
+				camera.position.x = 100 * Math.sin( phi ) * Math.cos( theta );
+				camera.position.y = 100 * Math.cos( phi );
+				camera.position.z = 100 * Math.sin( phi ) * Math.sin( theta );
+
+				camera.lookAt( scene.position );
+
+				// pingpong
+
+				if ( count % 2 === 0 ) {
+
+					cubeCamera1.update( renderer, scene );
+					material.envMap = cubeRenderTarget1.texture;
+
+				} else {
+
+					cubeCamera2.update( renderer, scene );
+					material.envMap = cubeRenderTarget2.texture;
+
+				}
+
+				count ++;
+
+				renderer.render( scene, camera );
+
+			}
+
+			var raycaster = new THREE.Raycaster();
+
+			
+async function fetchData(){
+    var apikey="https://xchain.io/api/asset/SHADOWGRAPHY.OBJECT";
+
+    let data =  await fetch(apikey)
+      .then(response => response.json());
+      const { asset_longname, description } = data;
+
+      document.getElementById('asset').textContent = asset_longname;
+	  document.getElementById('description').textContent = description;
+      
+    console.log(data);
+}
+
+function onClick() {
+
+event.preventDefault();
+
+mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+raycaster.setFromCamera(mouse, camera);
+
+var intersects = raycaster.intersectObjects(scene.children, true);
+
+if (intersects.length > 0) { fetchData() }
+
+}
+
+
+
+		</script>
+
+	</body>
+</html>
